@@ -8,7 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Simulasi CAT CPNS - 110 Soal HOTS+ (30 TWK / 35 TIU / 45 TKP)</title>
+<title>Simulasi CAT SKD CPNS Bagian 17 - 110 Soal</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -168,7 +168,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; h
 
 <div class="flex items-baseline leading-none mb-1"><span class="text-white font-black text-lg tracking-tight">SIMULASI</span><span class="text-orange-400 font-black text-lg tracking-tight">CAT</span></div>
 
-<h1 class="text-md font-bold tracking-wider uppercase">Simulasi CAT CPNS Bagian ke-17</h1>
+<h1 class="text-md font-bold tracking-wider uppercase">Simulasi CAT SKD CPNS Bagian 17</h1>
 
 <p class="text-xs text-blue-200">Format SKD 110 Soal tescpns.online</p>
 
@@ -485,6 +485,13 @@ body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; h
 </div>
 
 <div id="explanation-feed-list" class="space-y-6"></div>
+                 <div id="answer-key-section" class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                   <div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+                     <div><h3 class="text-lg font-black text-slate-800">Kunci Jawaban</h3><p class="text-xs text-slate-500">Kunci mengikuti posisi pilihan yang diacak pada sesi ujian ini.</p></div>
+                     <span class="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700">110 Soal</span>
+                   </div>
+                   <div id="answer-key-list" class="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-11 gap-2"></div>
+                 </div>
 
 </div>
 
@@ -1001,38 +1008,39 @@ function buildFullQuiz() {
 
   const resultData = JSON.parse(JSON.stringify(masterHotsData));
 
-  resultData.forEach((q) => {
+  // Posisi kunci acak dengan distribusi A-E seimbang: masing-masing 22 soal.
+  const keyPositions = [];
+  for (let i = 0; i < resultData.length; i++) keyPositions.push(Math.floor(i / 22));
+  shuffleArray(keyPositions);
 
+  resultData.forEach((q, index) => {
     if (q.category === 'TKP') {
-
       const correctAnswerObject = q.options.find(opt => opt.score === 5);
-
       if (correctAnswerObject) q.answer = correctAnswerObject.text;
-
-      shuffleArray(q.options);
-
-    } else {
-
-      shuffleArray(q.options);
-
     }
 
+    shuffleArray(q.options);
+
+    const correctIndex = q.category === 'TKP'
+      ? q.options.findIndex(opt => opt.score === 5)
+      : q.options.findIndex(opt => opt === q.answer);
+    const targetIndex = keyPositions[index];
+
+    if (correctIndex !== targetIndex) {
+      const temp = q.options[targetIndex];
+      q.options[targetIndex] = q.options[correctIndex];
+      q.options[correctIndex] = temp;
+    }
   });
 
   return resultData;
-
 }
 
 function shuffleArray(array) {
-
   for (let i = array.length - 1; i > 0; i--) {
-
     const j = Math.floor(Math.random() * (i + 1));
-
     [array[i], array[j]] = [array[j], array[i]];
-
   }
-
 }
 
 let currentQuestionIndex = 0;
@@ -1553,6 +1561,24 @@ function renderExplanation(filterType) {
 
   });
 
+  renderAnswerKey();
+
+}
+
+function renderAnswerKey() {
+  const list = document.getElementById('answer-key-list');
+  if (!list || !fullQuizData.length) return;
+  list.innerHTML = '';
+  const letters = ['A','B','C','D','E'];
+  fullQuizData.forEach((q, idx) => {
+    const correctIndex = q.category === 'TKP'
+      ? q.options.findIndex(opt => opt.score === 5)
+      : q.options.findIndex(opt => opt === q.answer);
+    const item = document.createElement('div');
+    item.className = 'flex items-center justify-between gap-1 px-2.5 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold';
+    item.innerHTML = `<span class="text-slate-500">${idx + 1}</span><span class="text-blue-700">${letters[correctIndex]}</span>`;
+    list.appendChild(item);
+  });
 }
 
 document.querySelectorAll('#explanation-filters button').forEach(btn => {
